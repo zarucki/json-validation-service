@@ -9,7 +9,7 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
 
-object JsonvalidationserviceServer {
+object JsonValidationServiceServer {
 
   def stream[F[_]: Async]: Stream[F, Nothing] = {
     for {
@@ -22,8 +22,8 @@ object JsonvalidationserviceServer {
       // want to extract segments not checked
       // in the underlying routes.
       httpApp = (
-        JsonvalidationserviceRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        JsonvalidationserviceRoutes.jokeRoutes[F](jokeAlg)
+        JsonValidationServiceRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
+        JsonValidationServiceRoutes.jokeRoutes[F](jokeAlg)
       ).orNotFound
 
       // With Middlewares in place
