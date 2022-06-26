@@ -30,4 +30,12 @@ object JsonValidationServiceRoutes {
         } yield resp
     }
   }
+
+  def schemaManagementRoutes[F[_]: Sync](): HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F]{}
+    import dsl._
+    HttpRoutes.of[F] {
+      case _ => Ok()
+    }
+  }
 }
