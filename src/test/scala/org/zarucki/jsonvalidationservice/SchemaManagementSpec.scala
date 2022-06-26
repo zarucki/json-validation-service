@@ -9,15 +9,36 @@ import org.http4s.implicits._
 import org.http4s.client.dsl.io._
 
 class SchemaManagementSpec extends CatsEffectSuite {
+  val testSchemaId = "test-schema"
+  val ValidJson = "{}"
+  val InvalidJson = "asdf"
 
-  test("POST schema with not proper json returns error about invalid JSON") {
-    assertIO(postJsonSchema("test-schema", "asdf").flatMap(_.as[String]),
-      json"""{
+  test("POST schema with valid json returns 200 OK") {
+    assertIO(postJsonSchema(testSchemaId, ValidJson).map(_.status), Status.Ok)
+  }
+
+  // TODO: what if already exists?
+  test("POST schema with valid json returns successful response") {
+    assertIO(postJsonSchema(testSchemaId, ValidJson).flatMap(_.as[String].map(parse)),
+      Right(json"""{
         "action":  "uploadSchema",
-        "id":      "config-schema",
+        "id":      $testSchemaId,
+        "status":  "success"
+      }"""))
+  }
+
+  test("POST schema with not proper json returns 400 Bad Request") {
+    assertIO(postJsonSchema(testSchemaId, InvalidJson).map(_.status), Status.BadRequest)
+  }
+
+  test("POST schema with not proper json returns error response with information about invalid JSON") {
+    assertIO(postJsonSchema(testSchemaId, InvalidJson).flatMap(_.as[String].map(parse)),
+      Right(json"""{
+        "action":  "uploadSchema",
+        "id":      $testSchemaId,
         "status":  "error",
         "message": "Invalid JSON"
-      }""".toString())
+      }"""))
   }
 
   private[this] def postJsonSchema(id: String, body: String): IO[Response[IO]] = {
@@ -25,4 +46,6 @@ class SchemaManagementSpec extends CatsEffectSuite {
     val postSchema = POST(body, uri)
     JsonValidationServiceRoutes.schemaManagementRoutes[IO]().orNotFound(postSchema)
   }
+
+  private[this] def parse(str: String) = io.circe.jawn.parse(str)
 }
