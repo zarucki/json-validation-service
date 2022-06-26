@@ -26,13 +26,16 @@ object JsonValidationServiceRoutes {
   def schemaManagementRoutes[F[_]: Concurrent](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
     import dsl._
+
+    val schemaPath = Root / "schema"
     HttpRoutes.of[F] {
-      case req @ POST -> Root / "schema" / schemaId =>
+      case req @ POST -> `schemaPath` / schemaId =>
         val action = Actions.uploadSchema
           req.attemptAs[Json].foldF(
           _ => BadRequest(ActionReply(action, schemaId, Status.Error, "Invalid JSON".some)),
           _ => Ok(ActionReply(action, schemaId, Status.Success))
         )
+      case _ @ GET -> `schemaPath` / _ => NotFound()
     }
   }
 }
