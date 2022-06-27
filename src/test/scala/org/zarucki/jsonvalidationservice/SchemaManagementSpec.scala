@@ -11,60 +11,65 @@ import org.http4s.implicits._
 
 class SchemaManagementSpec extends CatsEffectSuite {
   val testSchemaId = "test-schema"
-  val ValidJson = "{}"
-  val InvalidJson = "asdf"
 
-  test("POST schema with valid json returns 201 Created") {
-    assertIO(postJsonSchema(testSchemaId, ValidJson).map(_.status), Status.Created)
-  }
-
-  // TODO: what if already exists?
-  test("POST schema with valid json returns successful response") {
-    assertIO(postJsonSchema(testSchemaId, ValidJson).flatMap(responseAsJson),
-      Right(json"""{
+  test("POST schema with valid json returns successful response and 201 created") {
+    val response = postJsonSchema(testSchemaId, json"{}".toString())
+    for {
+      _ <- assertIO(response.map(_.status), Status.Created)
+      _ <- assertIO(response.flatMap(responseAsJson),
+        Right(
+          json"""{
         "action":  "uploadSchema",
         "id":      $testSchemaId,
         "status":  "success"
       }"""))
+    } yield ()
   }
 
-  test("POST schema with not proper json returns 400 Bad Request") {
-    assertIO(postJsonSchema(testSchemaId, InvalidJson).map(_.status), Status.BadRequest)
-  }
-
-  test("POST schema with not proper json returns error response with information about invalid JSON") {
-    assertIO(postJsonSchema(testSchemaId, InvalidJson).flatMap(responseAsJson),
+  test("POST schema with not proper json returns error response with information about invalid JSON and 400 Bad Request") {
+    val InvalidJson = "asdf"
+    val response = postJsonSchema(testSchemaId, InvalidJson)
+    for {
+      _ <- assertIO(response.map(_.status), Status.BadRequest)
+      _ <- assertIO(response.flatMap(responseAsJson),
       Right(json"""{
         "action":  "uploadSchema",
         "id":      $testSchemaId,
         "status":  "error",
         "message": "Invalid JSON"
       }"""))
+    } yield ()
   }
 
   test("GET schema with unknown schema id should return 404 Not Found.") {
     assertIO(getJsonSchema("unknown-id").map(_.status).value, Some(Status.NotFound))
   }
 
-  test("GET request to known schema id should return that schema.") {
-    assertIO(postAndGetTheSameSchema.flatMap(responseAsJson),
+  test("GET request to known schema id should return that schema and 200 OK") {
+    val response = postAndGetTheSameSchema
+    for {
+      _ <- assertIO(response.map(_.status), Status.Ok)
+      _ <- assertIO(response.flatMap(responseAsJson),
       Right(
-        json"""{
+      json"""{
           "schema": true
         }""")
-    )
-  }
-
-  test("GET request to known schema id should return 200 OK") {
-    assertIO(postAndGetTheSameSchema.map(_.status), Status.Ok)
+      )
+    } yield ()
   }
 
   test("GET request to known schema id should return content type") {
-    assertIO(postAndGetTheSameSchema.map(_.contentType), Some(`Content-Type`(MediaType.unsafeParse("application/json"), Charset.`UTF-8`)))
+    assertIO(
+      postAndGetTheSameSchema.map(_.contentType),
+      Some(`Content-Type`(MediaType.unsafeParse("application/json"), Charset.`UTF-8`))
+    )
   }
 
   test("GET request to unknown path should return None") {
-    assertIO(JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(GET(uri"/non-existing-path")).value, None)
+    assertIO(
+      JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(GET(uri"/non-existing-path")).value,
+      None
+    )
   }
 
   private[this] def postJsonSchema(id: String, body: String) = {
