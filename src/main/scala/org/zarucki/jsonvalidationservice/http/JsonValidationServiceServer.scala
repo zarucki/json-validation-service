@@ -1,4 +1,4 @@
-package org.zarucki.jsonvalidationservice
+package org.zarucki.jsonvalidationservice.http
 
 import cats.effect.{Async, Resource}
 import cats.syntax.all._
@@ -11,15 +11,15 @@ import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
 object JsonValidationServiceServer {
 
-  def stream[F[_]: Async]: Stream[F, Nothing] = {
+  def stream[F[_] : Async]: Stream[F, Nothing] = {
     val path = java.nio.file.Path.of("schema-root")
 
     val jsonStorage = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
 
     val httpApp = (
       JsonValidationServiceRoutes.schemaManagementRoutes[F](jsonStorage) <+>
-      JsonValidationServiceRoutes.jsonValidationRoutes[F](jsonStorage)
-    ).orNotFound
+        JsonValidationServiceRoutes.jsonValidationRoutes[F](jsonStorage)
+      ).orNotFound
 
     // With Middlewares in place
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
@@ -31,7 +31,7 @@ object JsonValidationServiceServer {
           .withPort(port"8080")
           .withHttpApp(finalHttpApp)
           .build >>
-        Resource.eval(Async[F].never)
+          Resource.eval(Async[F].never)
       )
     } yield exitCode
   }.drain

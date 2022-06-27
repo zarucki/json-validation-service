@@ -7,7 +7,8 @@ import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 import org.http4s.headers.`Content-Type`
 import org.http4s.implicits._
-import org.zarucki.jsonvalidationservice.ActionReply.Actions
+import org.zarucki.jsonvalidationservice.http.ActionReply.Actions
+import org.zarucki.jsonvalidationservice.http.JsonValidationServiceRoutes
 
 class SchemaManagementSpec extends BaseSchemaSpec {
   test("POST schema with valid json returns successful response and 201 created") {

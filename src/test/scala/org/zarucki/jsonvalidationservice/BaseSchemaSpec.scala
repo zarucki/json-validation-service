@@ -6,6 +6,7 @@ import munit.CatsEffectSuite
 import org.http4s.{Response, Status, Uri}
 import org.http4s.dsl.io.{GET, POST}
 import org.http4s.client.dsl.io._
+import org.zarucki.jsonvalidationservice.http.JsonValidationServiceRoutes
 import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
 abstract class BaseSchemaSpec extends CatsEffectSuite {

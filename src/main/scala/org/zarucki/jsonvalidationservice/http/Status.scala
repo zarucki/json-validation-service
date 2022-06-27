@@ -1,4 +1,4 @@
-package org.zarucki.jsonvalidationservice
+package org.zarucki.jsonvalidationservice.http
 
 import io.circe.{Encoder, Json}
 
