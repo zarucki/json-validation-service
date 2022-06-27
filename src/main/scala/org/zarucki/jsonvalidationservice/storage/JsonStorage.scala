@@ -4,5 +4,5 @@ import io.circe.Json
 
 trait JsonStorage[F[_]] {
   def upsert(id: String, json: Json): F[Unit]
-  def get(id: String): F[Option[Json]]
+  def getStream(id: String): F[Option[fs2.Stream[F, Byte]]]
 }

@@ -13,8 +13,8 @@ class SchemaManagementSpec extends CatsEffectSuite {
   val ValidJson = "{}"
   val InvalidJson = "asdf"
 
-  test("POST schema with valid json returns 200 OK") {
-    assertIO(postJsonSchema(testSchemaId, ValidJson).map(_.status), Status.Ok)
+  test("POST schema with valid json returns 201 Created") {
+    assertIO(postJsonSchema(testSchemaId, ValidJson).map(_.status), Status.Created)
   }
 
   // TODO: what if already exists?
@@ -45,6 +45,19 @@ class SchemaManagementSpec extends CatsEffectSuite {
     assertIO(getJsonSchema("unknown-id").map(_.status).value, Some(Status.NotFound))
   }
 
+  test("GET request to known schema id should return that schema.") {
+    assertIO(postAndGetTheSameSchema.flatMap(responseAsJson),
+      Right(
+        json"""{
+          "schema": true
+        }""")
+    )
+  }
+
+  test("GET request to known schema id should return 200 OK") {
+    assertIO(postAndGetTheSameSchema.map(_.status), Status.Ok)
+  }
+
   test("GET request to unknown path should return None") {
     assertIO(JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(GET(uri"/non-existing-path")).value, None)
   }
@@ -57,6 +70,13 @@ class SchemaManagementSpec extends CatsEffectSuite {
   private[this] def getJsonSchema(id: String) = {
     val getSchema = GET(uriForSchema(id))
     JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(getSchema)
+  }
+
+  private[this] def postAndGetTheSameSchema = {
+    for {
+      _ <- assertIO(postJsonSchema(testSchemaId, json"""{"schema": true}""".toString()).map(_.status), Status.Created)
+      getResponse <- getJsonSchema(testSchemaId).value
+    } yield getResponse.getOrElse(Response.notFound)
   }
 
   private[this] def uriForSchema(id: String) = Uri.unsafeFromString(s"/schema/$id")
