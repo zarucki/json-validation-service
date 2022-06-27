@@ -5,13 +5,15 @@ import cats.effect.kernel.Concurrent
 import cats.implicits._
 import fs2.io.file.Files
 import io.circe.Json
-import org.http4s.HttpRoutes
+import org.http4s.{Charset, HttpRoutes, MediaType}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.`Content-Type`
 import org.zarucki.jsonvalidationservice.ActionReply.Actions
 import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
 object JsonValidationServiceRoutes {
+  private val jsonMediaType = MediaType.unsafeParse("application/json")
 
   def helloWorldRoutes[F[_]: Sync](H: HelloWorld[F]): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
@@ -45,10 +47,11 @@ object JsonValidationServiceRoutes {
               } yield response
         )
       case GET -> `schemaPath` / schemaId =>
-        // TODO: need to set proper content type
         for {
           maybeJsonStream <- jsonStorage.getStream(schemaId)
-          response <- maybeJsonStream.fold(NotFound())(json => Ok(json))
+          response <- maybeJsonStream.fold(NotFound()) { json =>
+            Ok(json, `Content-Type`(jsonMediaType, Charset.`UTF-8`))
+          }
         } yield response
     }
   }

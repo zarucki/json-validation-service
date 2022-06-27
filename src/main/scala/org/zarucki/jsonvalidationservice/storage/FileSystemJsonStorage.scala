@@ -5,19 +5,24 @@ import fs2.io.file.{Files, Flags, Path, PosixPermissions}
 import io.circe.Json
 import cats.syntax.all._
 
+import java.nio.charset.StandardCharsets
+
 class FileSystemJsonStorage[F[_] : Files : Concurrent](rootPath: Path) extends JsonStorage[F] {
   private val onlyOwnerAccessPosix = PosixPermissions(OwnerRead, OwnerWrite, OwnerExecute)
 
   // TODO: shouldn't I work on some JsonStream?
   override def upsert(id: String, json: Json): F[Unit] = {
-    val jsonSourceStream = fs2.Stream.emits(jsonStringWithoutNulls(json).getBytes)
+    val jsonBytes = jsonStringWithoutNulls(json).getBytes(StandardCharsets.UTF_8)
     for {
       _ <- Files[F].createDirectories(pathForSchemaDirectory(id), onlyOwnerAccessPosix.some)
-      _ <- jsonSourceStream.through(Files[F].writeAll(pathForSchema(id), Flags.Write)).compile.drain
+      _ <- fs2.Stream
+        .emits(jsonBytes)
+        .through(Files[F].writeAll(pathForSchema(id), Flags.Write))
+        .compile
+        .drain
     } yield ()
   }
 
-  // TODO: should I return a stream?
   override def getStream(id: String): F[Option[fs2.Stream[F, Byte]]] = {
     val schemaPath = pathForSchema(id)
     for {

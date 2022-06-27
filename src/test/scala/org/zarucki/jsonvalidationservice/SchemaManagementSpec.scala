@@ -6,6 +6,7 @@ import munit.CatsEffectSuite
 import org.http4s._
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
+import org.http4s.headers.`Content-Type`
 import org.http4s.implicits._
 
 class SchemaManagementSpec extends CatsEffectSuite {
@@ -56,6 +57,10 @@ class SchemaManagementSpec extends CatsEffectSuite {
 
   test("GET request to known schema id should return 200 OK") {
     assertIO(postAndGetTheSameSchema.map(_.status), Status.Ok)
+  }
+
+  test("GET request to known schema id should return content type") {
+    assertIO(postAndGetTheSameSchema.map(_.contentType), Some(`Content-Type`(MediaType.unsafeParse("application/json"), Charset.`UTF-8`)))
   }
 
   test("GET request to unknown path should return None") {
