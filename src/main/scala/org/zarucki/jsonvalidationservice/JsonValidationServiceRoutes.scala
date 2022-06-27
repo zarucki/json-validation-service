@@ -10,8 +10,6 @@ import org.http4s.{Charset, HttpRoutes, MediaType}
 import org.zarucki.jsonvalidationservice.ActionReply.Actions
 import org.zarucki.jsonvalidationservice.storage.JsonStorage
 
-import scala.annotation.unused
-
 object JsonValidationServiceRoutes {
   private val jsonMediaType = MediaType.unsafeParse("application/json")
 
@@ -41,7 +39,7 @@ object JsonValidationServiceRoutes {
     }
   }
 
-  def jsonValidationRoutes[F[_] : Concurrent](@unused jsonStorage: JsonStorage[F]): HttpRoutes[F] = {
+  def jsonValidationRoutes[F[_] : Concurrent](jsonStorage: JsonStorage[F]): HttpRoutes[F] = {
 
     val dsl = new Http4sDsl[F]{}
     import dsl._
