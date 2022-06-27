@@ -46,7 +46,7 @@ class SchemaManagementSpec extends CatsEffectSuite {
   }
 
   test("GET request to known schema id should return that schema and 200 OK") {
-    val response = postAndGetTheSameSchema
+    val response = postAndGetTheSameSchema(json"""{"schema": true}""".toString())
     for {
       _ <- assertIO(response.map(_.status), Status.Ok)
       _ <- assertIO(response.flatMap(responseAsJson),
@@ -60,7 +60,7 @@ class SchemaManagementSpec extends CatsEffectSuite {
 
   test("GET request to known schema id should return content type") {
     assertIO(
-      postAndGetTheSameSchema.map(_.contentType),
+      postAndGetTheSameSchema(json"""{}""".toString()).map(_.contentType),
       Some(`Content-Type`(MediaType.unsafeParse("application/json"), Charset.`UTF-8`))
     )
   }
@@ -70,6 +70,23 @@ class SchemaManagementSpec extends CatsEffectSuite {
       JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(GET(uri"/non-existing-path")).value,
       None
     )
+  }
+
+  test("POST to existing schema overwrites it.") {
+    for {
+      _ <- assertIO(postAndGetTheSameSchema(json"""{"schema": true}""".toString()).flatMap(responseAsJson),
+        Right(
+          json"""{
+          "schema": true
+        }""")
+      )
+      _ <- assertIO(postAndGetTheSameSchema(json"""{"schema": false}""".toString()).flatMap(responseAsJson),
+        Right(
+          json"""{
+          "schema": false
+        }""")
+      )
+    } yield ()
   }
 
   private[this] def postJsonSchema(id: String, body: String) = {
@@ -82,9 +99,9 @@ class SchemaManagementSpec extends CatsEffectSuite {
     JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(getSchema)
   }
 
-  private[this] def postAndGetTheSameSchema = {
+  private[this] def postAndGetTheSameSchema(schema: String) = {
     for {
-      _ <- assertIO(postJsonSchema(testSchemaId, json"""{"schema": true}""".toString()).map(_.status), Status.Created)
+      _ <- assertIO(postJsonSchema(testSchemaId, schema).map(_.status), Status.Created)
       getResponse <- getJsonSchema(testSchemaId).value
     } yield getResponse.getOrElse(Response.notFound)
   }
