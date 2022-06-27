@@ -7,7 +7,7 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Content-Type`
 import org.http4s.{Charset, HttpRoutes, MediaType}
-import org.zarucki.jsonvalidationservice.http.ActionReply.Actions
+import org.zarucki.jsonvalidationservice.http.ActionResponse.Actions
 import org.zarucki.jsonvalidationservice.storage.JsonStorage
 
 object JsonValidationServiceRoutes {
@@ -22,11 +22,11 @@ object JsonValidationServiceRoutes {
       case req@POST -> `schemaPath` / schemaId =>
         val action = Actions.uploadSchema
         req.attemptAs[Json].foldF(
-          _ => BadRequest(ActionReply(action, schemaId, Status.Error, "Invalid JSON".some)),
+          _ => BadRequest(ActionResponse(action, schemaId, Status.Error, "Invalid JSON".some)),
           json =>
             for {
               _ <- jsonStorage.upsert(schemaId, json)
-              response <- Created(ActionReply(action, schemaId, Status.Success))
+              response <- Created(ActionResponse(action, schemaId, Status.Success))
             } yield response
         )
       case GET -> `schemaPath` / schemaId =>
@@ -49,7 +49,7 @@ object JsonValidationServiceRoutes {
         for {
           maybeJsonSchemaStream <- jsonStorage.getStream(schemaId)
           response <- maybeJsonSchemaStream.fold(NotFound()) { _ =>
-            Ok(ActionReply(Actions.validateDocument, schemaId, Status.Success))
+            Ok(ActionResponse(Actions.validateDocument, schemaId, Status.Success))
           }
         } yield response
     }
