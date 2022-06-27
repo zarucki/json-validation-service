@@ -10,6 +10,8 @@ import org.http4s.{Charset, HttpRoutes, MediaType}
 import org.zarucki.jsonvalidationservice.ActionReply.Actions
 import org.zarucki.jsonvalidationservice.storage.JsonStorage
 
+import scala.annotation.unused
+
 object JsonValidationServiceRoutes {
   private val jsonMediaType = MediaType.unsafeParse("application/json")
 
@@ -31,9 +33,25 @@ object JsonValidationServiceRoutes {
         )
       case GET -> `schemaPath` / schemaId =>
         for {
-          maybeJsonStream <- jsonStorage.getStream(schemaId)
-          response <- maybeJsonStream.fold(NotFound()) { json =>
+          maybeJsonSchemaStream <- jsonStorage.getStream(schemaId)
+          response <- maybeJsonSchemaStream.fold(NotFound()) { json =>
             Ok(json, `Content-Type`(jsonMediaType, Charset.`UTF-8`))
+          }
+        } yield response
+    }
+  }
+
+  def jsonValidationRoutes[F[_] : Concurrent](@unused jsonStorage: JsonStorage[F]): HttpRoutes[F] = {
+
+    val dsl = new Http4sDsl[F]{}
+    import dsl._
+
+    HttpRoutes.of[F] {
+      case _ @ POST -> Root / "validate" / schemaId =>
+        for {
+          maybeJsonSchemaStream <- jsonStorage.getStream(schemaId)
+          response <- maybeJsonSchemaStream.fold(NotFound()) { _ =>
+            Ok(ActionReply(Actions.validateDocument, schemaId, Status.Success))
           }
         } yield response
     }

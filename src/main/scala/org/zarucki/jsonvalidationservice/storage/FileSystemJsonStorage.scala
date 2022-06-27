@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets
 class FileSystemJsonStorage[F[_] : Files : Concurrent](rootPath: Path) extends JsonStorage[F] {
   private val onlyOwnerAccessPosix = PosixPermissions(OwnerRead, OwnerWrite, OwnerExecute)
 
-  // TODO: shouldn't I work on some JsonStream?
   override def upsert(id: String, json: Json): F[Unit] = {
     val jsonBytes = jsonStringWithoutNulls(json).getBytes(StandardCharsets.UTF_8)
     for {

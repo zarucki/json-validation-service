@@ -13,5 +13,6 @@ object ActionReply {
 
   object Actions {
     val uploadSchema = "uploadSchema"
+    val validateDocument = "validateDocument"
   }
 }

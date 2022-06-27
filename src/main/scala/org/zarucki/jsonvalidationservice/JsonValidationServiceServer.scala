@@ -13,8 +13,13 @@ object JsonValidationServiceServer {
 
   def stream[F[_]: Async]: Stream[F, Nothing] = {
     val path = java.nio.file.Path.of("schema-root")
+
     val jsonStorage = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
-    val httpApp = JsonValidationServiceRoutes.schemaManagementRoutes[F](jsonStorage).orNotFound
+
+    val httpApp = (
+      JsonValidationServiceRoutes.schemaManagementRoutes[F](jsonStorage) <+>
+      JsonValidationServiceRoutes.jsonValidationRoutes[F](jsonStorage)
+    ).orNotFound
 
     // With Middlewares in place
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
