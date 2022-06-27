@@ -2,24 +2,20 @@ package org.zarucki.jsonvalidationservice
 
 import cats.effect.kernel.Concurrent
 import cats.implicits._
-import fs2.io.file.Files
 import io.circe.Json
-import org.http4s.{Charset, HttpRoutes, MediaType}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Content-Type`
+import org.http4s.{Charset, HttpRoutes, MediaType}
 import org.zarucki.jsonvalidationservice.ActionReply.Actions
-import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
+import org.zarucki.jsonvalidationservice.storage.JsonStorage
 
 object JsonValidationServiceRoutes {
   private val jsonMediaType = MediaType.unsafeParse("application/json")
 
-  def schemaManagementRoutes[F[_]: Files : Concurrent](): HttpRoutes[F] = {
+  def schemaManagementRoutes[F[_]: Concurrent](jsonStorage: JsonStorage[F]): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
     import dsl._
-
-    val path = java.nio.file.Path.of("schema-root")
-    val jsonStorage = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
 
     val schemaPath = Root / "schema"
     HttpRoutes.of[F] {

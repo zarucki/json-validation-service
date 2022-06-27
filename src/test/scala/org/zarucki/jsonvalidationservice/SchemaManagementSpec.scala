@@ -1,6 +1,7 @@
 package org.zarucki.jsonvalidationservice
 
-import cats.effect.IO
+import cats.effect.{Concurrent, IO}
+import fs2.io.file.Files
 import io.circe.literal._
 import munit.CatsEffectSuite
 import org.http4s._
@@ -8,9 +9,12 @@ import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 import org.http4s.headers.`Content-Type`
 import org.http4s.implicits._
+import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
 class SchemaManagementSpec extends CatsEffectSuite {
-  val testSchemaId = "test-schema"
+  private[this] val testSchemaId = "test-schema"
+  private[this] val path = java.nio.file.Path.of("test-schema-root")
+  private[this] def jsonStorage[F[_] : Files : Concurrent] = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
 
   test("POST schema with valid json returns successful response and 201 created") {
     val response = postJsonSchema(testSchemaId, json"{}".toString())
@@ -67,7 +71,7 @@ class SchemaManagementSpec extends CatsEffectSuite {
 
   test("GET request to unknown path should return None") {
     assertIO(
-      JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(GET(uri"/non-existing-path")).value,
+      JsonValidationServiceRoutes.schemaManagementRoutes[IO](jsonStorage).apply(GET(uri"/non-existing-path")).value,
       None
     )
   }
@@ -91,12 +95,12 @@ class SchemaManagementSpec extends CatsEffectSuite {
 
   private[this] def postJsonSchema(id: String, body: String) = {
     val postSchema = POST(body, uriForSchema(id))
-    JsonValidationServiceRoutes.schemaManagementRoutes[IO]().orNotFound(postSchema)
+    JsonValidationServiceRoutes.schemaManagementRoutes[IO](jsonStorage).orNotFound(postSchema)
   }
 
   private[this] def getJsonSchema(id: String) = {
     val getSchema = GET(uriForSchema(id))
-    JsonValidationServiceRoutes.schemaManagementRoutes[IO]().apply(getSchema)
+    JsonValidationServiceRoutes.schemaManagementRoutes[IO](jsonStorage).apply(getSchema)
   }
 
   private[this] def postAndGetTheSameSchema(schema: String) = {
