@@ -11,19 +11,11 @@ import org.http4s.server.middleware.Logger
 object JsonValidationServiceServer {
 
   def stream[F[_]: Async]: Stream[F, Nothing] = {
-    val helloWorldAlg = HelloWorld.impl[F]
-
-    // Combine Service Routes into an HttpApp.
-    // Can also be done via a Router if you
-    // want to extract segments not checked
-    // in the underlying routes.
-    val httpApp = (
-      JsonValidationServiceRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        JsonValidationServiceRoutes.schemaManagementRoutes[F]()
-      ).orNotFound
+    val httpApp = JsonValidationServiceRoutes.schemaManagementRoutes[F]().orNotFound
 
     // With Middlewares in place
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
+
     for {
       exitCode <- Stream.resource(
         EmberServerBuilder.default[F]

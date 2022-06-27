@@ -1,6 +1,5 @@
 package org.zarucki.jsonvalidationservice
 
-import cats.effect.Sync
 import cats.effect.kernel.Concurrent
 import cats.implicits._
 import fs2.io.file.Files
@@ -14,18 +13,6 @@ import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
 object JsonValidationServiceRoutes {
   private val jsonMediaType = MediaType.unsafeParse("application/json")
-
-  def helloWorldRoutes[F[_]: Sync](H: HelloWorld[F]): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F]{}
-    import dsl._
-    HttpRoutes.of[F] {
-      case GET -> Root / "hello" / name =>
-        for {
-          greeting <- H.hello(HelloWorld.Name(name))
-          resp <- Ok(greeting)
-        } yield resp
-    }
-  }
 
   def schemaManagementRoutes[F[_]: Files : Concurrent](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
