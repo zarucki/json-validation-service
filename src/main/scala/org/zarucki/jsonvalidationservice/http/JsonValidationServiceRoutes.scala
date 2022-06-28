@@ -36,8 +36,8 @@ object JsonValidationServiceRoutes {
       case GET -> `schemaPath` / schemaId =>
         for {
           maybeJsonSchemaStream <- jsonStorage.getStream(schemaId)
-          response <- maybeJsonSchemaStream.fold(NotFound()) { json =>
-            Ok(json, `Content-Type`(jsonMediaType, Charset.`UTF-8`))
+          response <- maybeJsonSchemaStream.fold(NotFound()) { jsonByteStream =>
+            Ok(jsonByteStream, `Content-Type`(jsonMediaType, Charset.`UTF-8`))
           }
         } yield response
     }
