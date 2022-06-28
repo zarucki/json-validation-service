@@ -33,6 +33,10 @@ class JsonValidationSpec extends BaseSchemaSpec {
   }
 
   test("POST request with config that is known and json that is invalid") {
+    val expectedErrorMsg =
+      "/chunks/size : instance type (string) does not match any allowed primitive type (allowed: [\"integer\"]); " +
+      "/timeout : numeric instance is greater than the required maximum (maximum: 32767, found: 50000)"
+
     for {
       _ <- assertIO(postJsonSchema(testSchemaId, exampleSchema).map(_.status), Status.Created)
       validateResponse = postValidate(testSchemaId, exampleInvalidObject)
@@ -42,7 +46,22 @@ class JsonValidationSpec extends BaseSchemaSpec {
           "action": ${Actions.validateDocument},
           "id": $testSchemaId,
           "status": "error",
-          "message": "/chunks/size : instance type (string) does not match any allowed primitive type (allowed: [\"integer\"]); /timeout : numeric instance is greater than the required maximum (maximum: 32767, found: 50000)"
+          "message": $expectedErrorMsg
+        }"""))
+    } yield ()
+  }
+
+  test("POST request with config that is known and json that is valid but empty") {
+    for {
+      _ <- assertIO(postJsonSchema(testSchemaId, exampleSchema).map(_.status), Status.Created)
+      validateResponse = postValidate(testSchemaId, json"""{}""".toString())
+      _ <- assertIO(validateResponse.map(_.status), Status.Ok)
+      _ <- assertIO(validateResponse.flatMap(responseAsJson), Right(
+        json"""{
+          "action": ${Actions.validateDocument},
+          "id": $testSchemaId,
+          "status": "error",
+          "message": " : object has missing required properties ([\"destination\",\"source\"])"
         }"""))
     } yield ()
   }
