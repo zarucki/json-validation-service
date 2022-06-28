@@ -18,7 +18,7 @@ abstract class BaseSchemaSuite extends CatsEffectSuite {
   )
 
   protected val testSchemaId = "test-schema"
-  protected val path = java.nio.file.Path.of("test-schema-root") // TODO: clean dirctory after specs
+  protected val path = java.nio.file.Path.of("test-schema-root")
   protected def jsonStorage[F[_] : Files : Concurrent] = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
 
   protected def postJsonSchema(id: String, body: String) = {
