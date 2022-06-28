@@ -27,3 +27,7 @@ lazy val root = (project in file("."))
     addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
     testFrameworks += new TestFramework("munit.Framework")
   )
+
+// because in current implementation it doesn't wait on teardown cleaning
+// FIXME
+Test / parallelExecution := false
