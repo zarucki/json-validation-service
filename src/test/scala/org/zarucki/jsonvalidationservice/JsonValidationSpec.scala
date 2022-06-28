@@ -1,6 +1,6 @@
 package org.zarucki.jsonvalidationservice
 
-import cats.effect.IO
+import cats.effect.{Async, IO}
 import io.circe.literal._
 import org.http4s._
 import org.http4s.client.dsl.io._
@@ -8,6 +8,7 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.zarucki.jsonvalidationservice.http.ActionResponse.Actions
 import org.zarucki.jsonvalidationservice.http.JsonValidationServiceRoutes
+import org.zarucki.jsonvalidationservice.validation.JavaLibraryJsonValidator
 
 import scala.io.Source
 
@@ -40,19 +41,21 @@ class JsonValidationSpec extends BaseSchemaSpec {
         json"""{
           "action": ${Actions.validateDocument},
           "id": $testSchemaId,
-          "status": "error"
+          "status": "error",
+          "message": "/chunks/size : instance type (string) does not match any allowed primitive type (allowed: [\"integer\"]); /timeout : numeric instance is greater than the required maximum (maximum: 32767, found: 50000)"
         }"""))
     } yield ()
   }
 
   private[this] def postValidate(id: String, body: String) = {
     val postSchema = POST(body, uriForValidation(id))
-    JsonValidationServiceRoutes.jsonValidationRoutes[IO](jsonStorage).orNotFound(postSchema)
+    JsonValidationServiceRoutes.jsonValidationRoutes[IO](jsonStorage, jsonValidator).orNotFound(postSchema)
   }
 
   private[this] def uriForValidation(id: String) = Uri.unsafeFromString(s"/validate/$id")
 
+  private[this] def jsonValidator[F[_] : Async] = new JavaLibraryJsonValidator[F]
   private[this] lazy val exampleSchema = Source.fromResource("example-schema.json").mkString
   private[this] lazy val exampleValidObject = Source.fromResource("example-object-valid.json").mkString
-  private[this] lazy val exampleInvalidObject = Source.fromResource("example-object-valid.json").mkString
+  private[this] lazy val exampleInvalidObject = Source.fromResource("example-object-invalid.json").mkString
 }

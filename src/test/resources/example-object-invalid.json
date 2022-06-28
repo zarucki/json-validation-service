@@ -3,7 +3,7 @@
   "destination": "/mnt/storage",
   "timeout": 50000,
   "chunks": {
-    "size": 1024,
+    "size": "1024",
     "number": null
   }
 }

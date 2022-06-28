@@ -8,17 +8,19 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
 import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
+import org.zarucki.jsonvalidationservice.validation.JavaLibraryJsonValidator
 
 object JsonValidationServiceServer {
 
   def stream[F[_] : Async]: Stream[F, Nothing] = {
     val path = java.nio.file.Path.of("schema-root")
 
-    val jsonStorage = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
+    val jsonStorage = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path)) // TODO: make this path configurable
+    val jsonValidator = new JavaLibraryJsonValidator[F]()
 
     val httpApp = (
       JsonValidationServiceRoutes.schemaManagementRoutes[F](jsonStorage) <+>
-        JsonValidationServiceRoutes.jsonValidationRoutes[F](jsonStorage)
+        JsonValidationServiceRoutes.jsonValidationRoutes[F](jsonStorage, jsonValidator)
       ).orNotFound
 
     // With Middlewares in place
