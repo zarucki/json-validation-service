@@ -11,9 +11,10 @@ object Main extends IOApp {
 
     ConfigSource.default.load[JsonValidationServiceServerConf] match {
       case Left(value) =>
-        print(value.prettyPrint())
+        println(value.prettyPrint())
         IO(ExitCode.Error)
       case Right(conf) =>
+        println(conf)
         JsonValidationServiceServer.stream[IO](conf).compile.drain.as(ExitCode.Success)
     }
   }
