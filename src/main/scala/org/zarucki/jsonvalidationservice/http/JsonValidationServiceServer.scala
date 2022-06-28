@@ -6,12 +6,12 @@ import com.comcast.ip4s._
 import fs2.Stream
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
-import org.http4s.server.middleware.Logger
+import org.typelevel.log4cats.Logger
 import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 import org.zarucki.jsonvalidationservice.validation.JavaLibraryJsonValidator
 
 object JsonValidationServiceServer {
-  def stream[F[_] : Async](conf: JsonValidationServiceServerConf): Stream[F, Nothing] = {
+  def stream[F[_] : Async : Logger](conf: JsonValidationServiceServerConf): Stream[F, Nothing] = {
     val jsonStorage = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(conf.schemaRootPath))
     val jsonValidator = new JavaLibraryJsonValidator[F]()
 
@@ -21,7 +21,7 @@ object JsonValidationServiceServer {
     ).orNotFound
 
     // With Middlewares in place
-    val finalHttpApp = Logger.httpApp(true, true)(httpApp)
+    val finalHttpApp = org.http4s.server.middleware.Logger.httpApp(true, true)(httpApp)
 
     for {
       exitCode <- Stream.resource(

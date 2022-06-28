@@ -8,9 +8,11 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Content-Type`
 import org.http4s.{Charset, HttpRoutes, MediaType}
+import org.typelevel.log4cats.Logger
 import org.zarucki.jsonvalidationservice.http.ActionResponse.Actions
 import org.zarucki.jsonvalidationservice.storage.JsonStorage
 import org.zarucki.jsonvalidationservice.validation.JsonValidator
+import org.typelevel.log4cats.syntax._
 
 object JsonValidationServiceRoutes {
   private val jsonMediaType = MediaType.unsafeParse("application/json")
@@ -41,7 +43,7 @@ object JsonValidationServiceRoutes {
     }
   }
 
-  def jsonValidationRoutes[F[_] : Concurrent](jsonStorage: JsonStorage[F], jsonValidator: JsonValidator[F]): HttpRoutes[F] = {
+  def jsonValidationRoutes[F[_] : Concurrent : Logger](jsonStorage: JsonStorage[F], jsonValidator: JsonValidator[F]): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
 
@@ -49,7 +51,9 @@ object JsonValidationServiceRoutes {
       case req @ POST -> Root / "validate" / schemaId =>
         for {
           maybeJsonSchemaStream <- jsonStorage.getStream(schemaId)
-          response <- maybeJsonSchemaStream.fold(NotFound()) { schemaJson =>
+          response <- maybeJsonSchemaStream.fold {
+            warn"Couldn't find schema with id $schemaId".flatMap(_ => NotFound())
+          } { schemaJson =>
             val action = Actions.validateDocument
             jsonValidator.validateJsonAgainstSchema(json = req.body, schema = schemaJson).flatMap {
               case Validated.Valid(_) =>

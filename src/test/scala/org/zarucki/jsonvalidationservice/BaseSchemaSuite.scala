@@ -1,11 +1,13 @@
 package org.zarucki.jsonvalidationservice
 
-import cats.effect.{Concurrent, IO}
+import cats.effect.{Concurrent, IO, Sync}
 import fs2.io.file.Files
 import munit.CatsEffectSuite
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io.{GET, POST}
 import org.http4s.{Response, Status, Uri}
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.zarucki.jsonvalidationservice.http.JsonValidationServiceRoutes
 import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
@@ -17,9 +19,11 @@ abstract class BaseSchemaSuite extends CatsEffectSuite {
     _ => deleteDirectoryWithFiles(path)
   )
 
+  implicit def unsafeLogger[F[_] : Sync] = Slf4jLogger.getLogger[F]
+
   protected val testSchemaId = "test-schema"
   protected val path = java.nio.file.Path.of("test-schema-root")
-  protected def jsonStorage[F[_] : Files : Concurrent] = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
+  protected def jsonStorage[F[_] : Files : Concurrent : Logger] = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
 
   protected def postJsonSchema(id: String, body: String) = {
     val postSchema = POST(body, uriForSchema(id))
