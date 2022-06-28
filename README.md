@@ -9,19 +9,19 @@ To run server:
 sbt run
 ```
 
-implementation only uses file system to store schema files, to override root directory you can use environment variable:
+Implementation only uses file system to store schema files. By default schema-root directory is created in project directory.
 
+To override root directory you can use environment variable:
 ```bash
 export SCHEMA_ROOT_PATH="./some/other/path"
 ```
-To run tests:
 
+To run tests:
 ```bash
 sbt test
 ```
 
 While server is running you can run bash script with example curls:
-
 ```bash
 ./runTestScenario.sh
 ```
