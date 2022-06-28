@@ -9,7 +9,7 @@ import org.http4s.client.dsl.io._
 import org.zarucki.jsonvalidationservice.http.JsonValidationServiceRoutes
 import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
-abstract class BaseSchemaSpec extends CatsEffectSuite {
+abstract class BaseSchemaSuite extends CatsEffectSuite {
   protected val testSchemaId = "test-schema"
   protected val path = java.nio.file.Path.of("test-schema-root") // TODO: clean dirctory after specs
   protected def jsonStorage[F[_] : Files : Concurrent] = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))

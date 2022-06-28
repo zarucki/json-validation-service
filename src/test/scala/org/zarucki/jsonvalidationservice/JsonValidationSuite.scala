@@ -12,7 +12,7 @@ import org.zarucki.jsonvalidationservice.validation.JavaLibraryJsonValidator
 
 import scala.io.Source
 
-class JsonValidationSpec extends BaseSchemaSpec {
+class JsonValidationSuite extends BaseSchemaSuite {
 
   test("POST request with config id that is not known") {
      assertIO(postValidate("test-config-unknown", json"""{}""".toString()).map(_.status), Status.NotFound)

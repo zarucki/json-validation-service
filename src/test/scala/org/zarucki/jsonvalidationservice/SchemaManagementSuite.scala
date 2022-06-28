@@ -10,7 +10,7 @@ import org.http4s.implicits._
 import org.zarucki.jsonvalidationservice.http.ActionResponse.Actions
 import org.zarucki.jsonvalidationservice.http.JsonValidationServiceRoutes
 
-class SchemaManagementSpec extends BaseSchemaSpec {
+class SchemaManagementSuite extends BaseSchemaSuite {
   test("POST schema with valid json returns successful response and 201 created") {
     val response = postJsonSchema(testSchemaId, json"{}".toString())
     for {
