@@ -14,11 +14,11 @@ import scala.io.Source
 
 class JsonValidationSuite extends BaseSchemaSuite {
 
-  test("POST request with config id that is not known") {
+  schemas.test("POST request with config id that is not known") { _ =>
      assertIO(postValidate("test-config-unknown", json"""{}""".toString()).map(_.status), Status.NotFound)
   }
 
-  test("POST request with config that is known and json that is valid") {
+  schemas.test("POST request with config that is known and json that is valid") { _ =>
     for {
       _ <- assertIO(postJsonSchema(testSchemaId, exampleSchema).map(_.status), Status.Created)
       validateResponse = postValidate(testSchemaId, exampleValidObject)
@@ -32,7 +32,7 @@ class JsonValidationSuite extends BaseSchemaSuite {
     } yield ()
   }
 
-  test("POST request with config that is known and json that is invalid") {
+  schemas.test("POST request with config that is known and json that is invalid") { _ =>
     val expectedErrorMsg =
       "/chunks/size : instance type (string) does not match any allowed primitive type (allowed: [\"integer\"]); " +
       "/timeout : numeric instance is greater than the required maximum (maximum: 32767, found: 50000)"
@@ -51,7 +51,7 @@ class JsonValidationSuite extends BaseSchemaSuite {
     } yield ()
   }
 
-  test("POST request with config that is known and json that is valid but empty") {
+  schemas.test("POST request with config that is known and json that is valid but empty") { _ =>
     for {
       _ <- assertIO(postJsonSchema(testSchemaId, exampleSchema).map(_.status), Status.Created)
       validateResponse = postValidate(testSchemaId, json"""{}""".toString())

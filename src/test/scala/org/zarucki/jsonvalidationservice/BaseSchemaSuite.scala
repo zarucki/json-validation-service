@@ -3,13 +3,20 @@ package org.zarucki.jsonvalidationservice
 import cats.effect.{Concurrent, IO}
 import fs2.io.file.Files
 import munit.CatsEffectSuite
-import org.http4s.{Response, Status, Uri}
-import org.http4s.dsl.io.{GET, POST}
 import org.http4s.client.dsl.io._
+import org.http4s.dsl.io.{GET, POST}
+import org.http4s.{Response, Status, Uri}
 import org.zarucki.jsonvalidationservice.http.JsonValidationServiceRoutes
 import org.zarucki.jsonvalidationservice.storage.FileSystemJsonStorage
 
+import scala.reflect.io.Directory
+
 abstract class BaseSchemaSuite extends CatsEffectSuite {
+  protected val schemas = FunFixture[Unit](
+    _ => (),
+    _ => deleteDirectoryWithFiles(path)
+  )
+
   protected val testSchemaId = "test-schema"
   protected val path = java.nio.file.Path.of("test-schema-root") // TODO: clean dirctory after specs
   protected def jsonStorage[F[_] : Files : Concurrent] = new FileSystemJsonStorage[F](fs2.io.file.Path.fromNioPath(path))
@@ -36,4 +43,9 @@ abstract class BaseSchemaSuite extends CatsEffectSuite {
   protected def responseAsJson(response: Response[IO]) = response.as[String].map(parse)
 
   protected def parse(str: String) = io.circe.jawn.parse(str)
+
+  private def deleteDirectoryWithFiles(path: java.nio.file.Path): Unit = {
+    new Directory(path.toFile).deleteRecursively()
+    ()
+  }
 }
